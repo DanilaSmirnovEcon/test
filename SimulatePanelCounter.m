@@ -1,4 +1,8 @@
-function [agentPanel, agentPanel_full] = SimulatePanel(solutionSP, valueFunc, gridSf, gridSm, gridP, param, simParam)
+function [agentPanel, agentPanel_full] = SimulatePanelCounter(solutionSP, valueFunc, gridSf, gridSm, gridP, param, simParam)
+% SimulatePanelCounter: exogenous-marriage counterfactual variant of SimulatePanel
+% (Table 5 / tab:decom). Agents get one random, unconditional shot at marriage
+% right at (re)birth (see param.exog_marriage_prob below) and never search the
+% marriage market again.
 % SimulatePanel  � agent-outer, time-inner parallel simulation
 %   � Three phases with custom step lengths:
 %       1) coarse burn-in, 2) fine burn-in, 3) actual simulation
@@ -45,8 +49,13 @@ if ~isfield(param,'accept_model'), param.accept_model = 'probit'; end  % 'probit
 if ~isfield(param,'accept_sigma'), param.accept_sigma = 0.00;     end  % noise scale
 if ~isfield(param,'accept_tau'),   param.accept_tau   = 0.00;     end  % surplus tolerance (>=0 stricter, <0 laxer)
 
-% ---- Force everyone to marry in this simulation ----
+% ---- Exogenous marriage counterfactual (Table 5 / tab:decom) ----
+% No bilateral search or value comparison: each agent gets a single, one-time
+% draw right at (re)birth. With probability param.exog_marriage_prob they are
+% married off to a random partner and never search the marriage market again;
+% otherwise they stay single for the rest of that life-spell.
 param.always_marry = true;
+if ~isfield(param,'exog_marriage_prob'), param.exog_marriage_prob = 0.52; end
 
 % ---- Build step schedule (months per step for each phase) ----
 stepMonths = [ ...
@@ -226,8 +235,10 @@ parfor i = 1:N
                           valueFunc, param, h, wgrid_f, edges_f, wgrid_m, edges_m, u_w_s);
 
 
-            % Marriage market meeting
-            meet = u_me >= 0.5; % (u_me > exp(-param.m * h));
+            % Marriage market meeting: one exogenous shot, only in the period
+            % immediately following (re)birth (nb(t-1)==1); no further chances
+            % afterward, and no dependence on the endogenous meeting rate param.m.
+            meet = (nb(t-1)==1) && (u_me < param.exog_marriage_prob);
             in_keep = (t >= T0) && (t <= T1);
             if meet
                 if in_keep

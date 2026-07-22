@@ -40,13 +40,13 @@ pf.aergvar = 0.805;%0.205;              % Standard deviation of entry productivi
 %==========================================================================
 
 % Job destruction and search
-pf.delta = 0.0115;               % Monthly job separation rate (lower than males)
+pf.delta = 0.015;               % Monthly job separation rate (paper Table 2: higher than males)
 
 % Search intensity by employment status
 pf.lambda = 0;                  % Search intensity when employed (on-the-job search)
-pf.lambda_u = 0.325;%16;               % Search intensity when unemployed
+pf.lambda_u = 0.45;               % Search intensity when unemployed (paper Table 2)
 pf.lambda_o = 50;              % Search intensity when out of labor force
-pf.lambda_oE = 0.08;
+pf.lambda_oE = 0.105;            % OLF job arrival rate (paper Table 2: higher than males)
 
 %==========================================================================
 %% OUT-OF-LABOR-FORCE BENEFITS
