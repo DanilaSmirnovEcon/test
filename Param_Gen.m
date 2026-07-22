@@ -24,7 +24,7 @@ function param = Param_Gen()
 %==========================================================================
 
 % Time preference and risk aversion
-param.rho = 0.0015;%-log(1-0.05)/12;    % Monthly discount rate (5% annual)
+param.rho = 0.0034;%-log(1-0.05)/12;    % Monthly discount rate (paper Table 2)
 param.nu = 2.00;                   % Coefficient of relative risk aversion
 param.zeta = (1/40)/12;         % Monthly retirement probability (40-year careers)
 
@@ -71,7 +71,7 @@ param.os = +1.20;%1.70;                % Extra OLF benefit if single
 %==========================================================================
 
 % Marriage process
-param.m = 0.475;%0.00375;              % Monthly marriage meeting intensity
+param.m = 0.375;%0.00375;              % Monthly marriage meeting intensity (paper Table 2)
 param.always_marry = false;     % Flag for forced marriages (debugging)
 param.tremble = 1e-1;         % Trembling hand parameter for marriage decisions
 
@@ -124,7 +124,7 @@ param.adjustW      = param.averagewage/25;% wage rescaling
 param.adjustWScale = param.averagewage/45000;
 param.E1_n0 = (6750*param.adjustWScale);  % Lower income threshold (no children)
 param.E1_n1 = (10150*param.adjustWScale); % Lower income threshold (with children)
-param.E2_n0 = (14250*param.adjustWScale); % Upper income threshold (no children)
+param.E2_n0 = (14200*param.adjustWScale); % Upper income threshold (no children)
 param.E2_n1 = (24350*param.adjustWScale); % Upper income threshold (with children)
 param.E3_n0 = (20950*param.adjustWScale); % Max income threshold (no children)
 param.E3_n1 = (46010*param.adjustWScale); % Max income threshold (with children)
