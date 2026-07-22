@@ -105,8 +105,8 @@ female = rand(N,1) < 0.5;
 % Initial ability draw by gender
 a0 = zeros(N,1);
 iF = female; iM = ~female;
-a0(iF) = clip(randn(sum(iF),1).*sqrt(param.pf.aergvar) + param.pf.aergmean, param.a.min, param.a.max);
-a0(iM) = clip(randn(sum(iM),1).*sqrt(param.pm.aergvar) + param.pm.aergmean, param.a.min, param.a.max);
+a0(iF) = clip(exp(randn(sum(iF),1).*sqrt(param.pf.aergvar) + param.pf.aergmean), param.a.min, param.a.max);
+a0(iM) = clip(exp(randn(sum(iM),1).*sqrt(param.pm.aergvar) + param.pm.aergmean), param.a.min, param.a.max);
 
 % t=1 initialization
 ability(:,1) = a0;
@@ -393,10 +393,10 @@ parfor i = 1:N
             w(t) = 0; k(t) = 0;
             pa(t)=NaN; pe(t)=NaN; po(t)=NaN; pw(t)=NaN; mo(t)=0; jo(t)=0;
             if isF
-                a(t) = clip(randn*sqrt(param.pf.aergvar) + param.pf.aergmean, param.a.min, param.a.max);
+                a(t) = clip(exp(randn*sqrt(param.pf.aergvar) + param.pf.aergmean), param.a.min, param.a.max);
                 value_now_i = valueFunc.single_female.unemployed_nokid(a(t));  % <<< CHANGED
             else
-                a(t) = clip(randn*sqrt(param.pm.aergvar) + param.pm.aergmean, param.a.min, param.a.max);
+                a(t) = clip(exp(randn*sqrt(param.pm.aergvar) + param.pm.aergmean), param.a.min, param.a.max);
                 value_now_i = valueFunc.single_male.unemployed_nokid(a(t));    % <<< CHANGED
             end
             V(t) = value_now_i;

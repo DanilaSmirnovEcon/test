@@ -33,7 +33,7 @@ pf.amean = 1.350;%3.0 * 0.75;         % Mean productivity level (lower than male
 
 % Entry-level productivity distribution
 pf.aergmean = 0.0;%1.00;             % Mean of entry productivity (log scale)
-pf.aergvar = 0.805;%0.205;              % Standard deviation of entry productivity
+pf.aergvar = 0.805;%0.205;              % Variance of entry productivity (log scale)
 
 %==========================================================================
 %% LABOR MARKET PARAMETERS
@@ -84,8 +84,8 @@ pf.pcs = 0.0004;%0.0004;                % Monthly probability of having children
 %==========================================================================
 
 % Distribution of productivity for newly entering female agents
-% Uses normal distribution in levels (not logs) centered at aergmean
-pf.a.erg = normpdf(gridSf.a.a, pf.aergmean, sqrt(pf.aergvar)); 
+% Log-normal, a0 ~ logN(aergmean, aergvar), consistent with BuildDoubleGrid.m
+pf.a.erg = lognpdf(gridSf.a.a + gridSf.a.da, pf.aergmean, sqrt(pf.aergvar));
 pf.a.erg = pf.a.erg ./ sum(pf.a.erg);  % Normalize to sum to 1
 
 %==========================================================================
