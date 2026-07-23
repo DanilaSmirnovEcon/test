@@ -14,8 +14,8 @@ function [param, gridSm] = Param_M(param)
 %
 % Male-specific features:
 %   - Higher average productivity levels
-%   - Higher job separation rates
-%   - Different search intensities by employment status  
+%   - Lower job separation rate than females (paper Table 2)
+%   - Different search intensities by employment status
 %   - Lower out-of-labor-force benefits (reflecting lower childcare responsibilities)
 %   - Gender-specific fertility rates
 %
