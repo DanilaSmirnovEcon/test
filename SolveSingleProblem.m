@@ -157,17 +157,25 @@ function solutionS = SolveSingleProblem(param, pg, gridS)
         end
     end
 
-    function [AO_U, AO_O] = generateAOl(S) % OLF, no kid
-        AO_U = spalloc(gridS.a.n, gridS.a.n, 0);
+    function [AO_J, AO_O] = generateAOl(S) % OLF, no kid
+        % Direct OLF -> Employed job draws at rate lambda_oE (paper: nu_g),
+        % accepted if the job beats staying OLF. No OLF -> Unemployed path:
+        % the paper does not model OLF agents "starting to search" as a
+        % separate step, only a direct job-offer draw from f(w).
+        AO_J = spalloc(gridS.a.n, pg.NS, 0);
         AO_O = sparse(gridS.a.n,  gridS.a.n) + pg.CU; % stay-in-O components
         for ai = 1:gridS.a.n
-            if S.OlValue(ai) + tol < S.UlValue(ai)
-                AO_O(ai,ai) = AO_O(ai,ai) - pg.lambda_o;
-                AO_U(ai,ai) = AO_U(ai,ai) + pg.lambda_o;
-            elseif tremble > 0
-                t = min(pg.lambda_o, tremble * exp(S.OlValue(ai) - S.UlValue(ai)));
-                AO_O(ai,ai) = AO_O(ai,ai) - t;
-                AO_U(ai,ai) = AO_U(ai,ai) + t;
+            for wi_new = 1:gridS.w.n
+                i_new = (wi_new-1)*gridS.a.n + ai;
+                if S.OlValue(ai) + tol < S.JlValue(ai, wi_new)
+                    w = pg.lambda_oE * param.f_long(wi_new);
+                    AO_O(ai,ai)    = AO_O(ai,ai)    - w;
+                    AO_J(ai,i_new) = AO_J(ai,i_new) + w;
+                elseif tremble > 0
+                    t = min(pg.lambda_oE, tremble * exp(S.OlValue(ai) - S.JlValue(ai,wi_new))) * param.f_long(wi_new);
+                    AO_O(ai,ai)    = AO_O(ai,ai)    - t;
+                    AO_J(ai,i_new) = AO_J(ai,i_new) + t;
+                end
             end
         end
     end
@@ -227,17 +235,22 @@ function solutionS = SolveSingleProblem(param, pg, gridS)
         end
     end
 
-    function [AO_U, AO_O] = generateAOc(S) % OLF, kid
-        AO_U = spalloc(gridS.a.n, gridS.a.n, 0);
+    function [AO_J, AO_O] = generateAOc(S) % OLF, kid
+        % Same direct OLF -> Employed mechanism as generateAOl, for parents.
+        AO_J = spalloc(gridS.a.n, pg.NS, 0);
         AO_O = sparse(gridS.a.n,  gridS.a.n) + pg.CU;
         for ai = 1:gridS.a.n
-            if S.OcValue(ai) + tol < S.UcValue(ai)
-                AO_O(ai,ai) = AO_O(ai,ai) - pg.lambda_o;
-                AO_U(ai,ai) = AO_U(ai,ai) + pg.lambda_o;
-            elseif tremble > 0
-                t = min(pg.lambda_o, tremble * exp(S.OcValue(ai) - S.UcValue(ai)));
-                AO_O(ai,ai) = AO_O(ai,ai) - t;
-                AO_U(ai,ai) = AO_U(ai,ai) + t;
+            for wi_new = 1:gridS.w.n
+                i_new = (wi_new-1)*gridS.a.n + ai;
+                if S.OcValue(ai) + tol < S.JcValue(ai, wi_new)
+                    w = pg.lambda_oE * param.f_long(wi_new);
+                    AO_O(ai,ai)    = AO_O(ai,ai)    - w;
+                    AO_J(ai,i_new) = AO_J(ai,i_new) + w;
+                elseif tremble > 0
+                    t = min(pg.lambda_oE, tremble * exp(S.OcValue(ai) - S.JcValue(ai,wi_new))) * param.f_long(wi_new);
+                    AO_O(ai,ai)    = AO_O(ai,ai)    - t;
+                    AO_J(ai,i_new) = AO_J(ai,i_new) + t;
+                end
             end
         end
     end
@@ -277,8 +290,8 @@ function solutionS = SolveSingleProblem(param, pg, gridS)
         [S.AJc_Jc, S.AJc_Uc, S.AJc_Oc] = generateAJc(S);
         [S.AUc_Jc, S.AUc_Uc, S.AUc_Oc] = generateAUc(S);
         % OLF
-        [S.AOl_Ul, S.AOl_Ol]           = generateAOl(S);
-        [S.AOc_Uc, S.AOc_Oc]           = generateAOc(S);
+        [S.AOl_Jl, S.AOl_Ol]           = generateAOl(S);
+        [S.AOc_Jc, S.AOc_Oc]           = generateAOc(S);
 
         % subtract pcs on “no kid” diagonals only; add coupling to kid
         ALl   = [S.AJl_Jl, S.AJl_Ul;
@@ -312,12 +325,15 @@ function solutionS = SolveSingleProblem(param, pg, gridS)
         S.AL_O  = [sparse(leftOl), sparse(rightOc)];   % (2*NSall) × (2*a)
 
         % rows [Ol; Oc], columns [Jl; Ul; Jc; Uc]
-        topOl = [ spalloc(gridS.a.n, pg.NS, 0), ...
-                  S.AOl_Ul, ...
+        % OLF re-entry lands directly in the employed (Jl/Jc) block, not Ul/Uc.
+        topOl = [ S.AOl_Jl, ...
+                  spalloc(gridS.a.n, gridS.a.n, 0), ...
                   spalloc(gridS.a.n, pg.NS, 0), ...
                   spalloc(gridS.a.n, gridS.a.n, 0) ];
-        botOc = [ spalloc(gridS.a.n, 2*pg.NS+gridS.a.n, 0), ...
-                  S.AOc_Uc ];
+        botOc = [ spalloc(gridS.a.n, pg.NS, 0), ...
+                  spalloc(gridS.a.n, gridS.a.n, 0), ...
+                  S.AOc_Jc, ...
+                  spalloc(gridS.a.n, gridS.a.n, 0) ];
         S.AO_L = [sparse(topOl); sparse(botOc)];       % (2*a) × (2*NSall)
 
         % full operator and Bellman linear system
